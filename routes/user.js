@@ -5,6 +5,8 @@ const { User } = require("../db");
 const { signupSchema, signinSchema } = require("./validators");
 const { error } = require("console");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const JWT_SECRET =  "Hushhhh!!! This is a secret key"
 
 router.post("/signup", async function(req, res) {
     const parsedResult = signupSchema.safeParse(req.body);
@@ -70,6 +72,11 @@ router.post("/signin", async function(req, res) {
                 msg: "Invalid password"
             })
         }
+
+        var token = jwt.sign({email: email}, JWT_SECRET);
+        return res.json({
+            token,
+        })
 
         res.json({
             msg: "User found successfully"
