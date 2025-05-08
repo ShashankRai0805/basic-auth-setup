@@ -4,6 +4,7 @@ const checkUser = require("../middlewares/user");
 const { User } = require("../db");
 const { signupSchema, signinSchema } = require("./validators");
 const { error } = require("console");
+const bcrypt = require("bcrypt");
 
 router.post("/signup", async function(req, res) {
     const parsedResult = signupSchema.safeParse(req.body);
@@ -18,9 +19,13 @@ router.post("/signup", async function(req, res) {
     const { username, password, email } = parsedResult.data;
 
     try {
+
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
         await User.create({
             username: username,
-            password: password,
+            password: hashedPassword,
             email: email
         });
         res.json({
@@ -49,14 +54,21 @@ router.post("/signin", async function(req, res) {
 
     try {
         const user = await User.findOne({
-            email: email,
-            password: password
+            email: email
         });
 
         if (!user) {
             return res.status(404).json({
                 msg: "User not found"
             });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid){
+            return res.status(401).json({
+                msg: "Invalid password"
+            })
         }
 
         res.json({
